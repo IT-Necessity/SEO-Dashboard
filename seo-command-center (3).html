@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SEO Command Center — IT-Necessity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07090d;--surface:#0d1117;--border:#1c2333;--border2:#232d3f;
+  --text:#c9d1d9;--muted:#586880;
+  --blue:#4f9cf9;--green:#2dce89;--amber:#f6b73c;--red:#f85149;--purple:#a78bfa;
+}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+#app{display:flex;flex-direction:column;height:100vh}
+#header{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;background:var(--surface)}
+#header h1{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:#fff;letter-spacing:1.5px}
+#header .sub{font-size:11px;color:var(--muted);margin-left:auto}
+#tabs{display:flex;align-items:stretch;border-bottom:1px solid var(--border);background:var(--surface);overflow-x:auto;flex-shrink:0;padding:0 16px;gap:2px}
+.tab{display:flex;align-items:center;gap:7px;padding:10px 16px;cursor:pointer;font-size:13px;font-weight:500;border-bottom:2px solid transparent;color:var(--muted);white-space:nowrap;transition:all .15s;user-select:none}
+.tab.active{color:#fff;border-bottom-color:var(--tab-color,var(--blue))}
+.tab:hover:not(.active){color:var(--text)}
+.tab .dot{width:7px;height:7px;border-radius:50%;background:var(--tab-color,var(--blue));flex-shrink:0}
+.tab .tab-x{opacity:0;font-size:15px;color:var(--muted);margin-left:2px;transition:opacity .1s;line-height:1}
+.tab:hover .tab-x{opacity:1}
+.tab .tab-x:hover{color:var(--red)}
+#add-tab{display:flex;align-items:center;gap:5px;padding:10px 14px;cursor:pointer;font-size:12px;color:var(--muted);transition:color .15s;border-bottom:2px solid transparent;white-space:nowrap}
+#add-tab:hover{color:var(--text)}
+#content{flex:1;overflow-y:auto;padding:18px 22px}
+.site-panel{display:none}
+.site-panel.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:0}
+.card-hd{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-hd .title{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:#fff;letter-spacing:.8px}
+.card-body{padding:14px 16px}
+input,textarea,select{background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:inherit;font-size:13px;outline:none;padding:7px 10px;transition:border-color .15s}
+input:focus,textarea:focus,select:focus{border-color:#2e4a7a;background:#0a0d14}
+.btn{cursor:pointer;border:none;border-radius:6px;font-family:inherit;font-size:12px;font-weight:600;padding:7px 14px;transition:all .15s;display:inline-flex;align-items:center;gap:5px;letter-spacing:.3px}
+.btn:hover{opacity:.8}
+.btn-blue{background:#0f2346;color:var(--blue)}
+.btn-green{background:#0a2318;color:var(--green)}
+.btn-amber{background:#221800;color:var(--amber)}
+.btn-purple{background:#1a1530;color:var(--purple)}
+.btn-red{background:none;color:#f85149;padding:4px 6px;font-size:13px}
+.btn-ghost{background:none;color:var(--muted);padding:6px 10px}
+/* site header */
+.site-hdr{display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;padding:16px 18px;margin-bottom:14px;border-left:3px solid var(--tab-color,var(--blue))}
+.site-hdr h2{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:#fff;margin-bottom:8px}
+.field-row{display:flex;flex-wrap:wrap;gap:8px}
+.stat-block{text-align:center;min-width:72px}
+.stat-block .val{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;line-height:1}
+.stat-block .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+/* gsc bar */
+.gsc-bar{padding:12px 16px;display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;font-size:13px}
+.gsc-status{display:flex;align-items:center;gap:7px;font-weight:600;flex-shrink:0}
+.dot-live{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
+.dot-off{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+/* main grid */
+.main-grid{display:grid;grid-template-columns:1fr 340px;gap:14px;align-items:start}
+@media(max-width:800px){.main-grid{grid-template-columns:1fr}}
+/* kw table */
+.kw-table{width:100%;border-collapse:collapse}
+.kw-table th{padding:8px 10px;text-align:left;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700;border-bottom:1px solid var(--border)}
+.kw-table td{padding:8px 10px;border-bottom:1px solid #111820;font-size:13px;vertical-align:middle}
+.kw-table tr:last-child td{border-bottom:none}
+.kw-table tbody tr:hover{background:rgba(255,255,255,.015)}
+.pos-badge{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;cursor:pointer;border-bottom:1px dashed;padding-bottom:1px}
+/* todo */
+.todo-item{display:flex;align-items:flex-start;gap:9px;padding:6px 0;border-bottom:1px solid #111820}
+.todo-item:last-child{border-bottom:none}
+.todo-cb{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--border2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .15s}
+.todo-cb.done{background:var(--green);border-color:var(--green)}
+.todo-text{flex:1;font-size:13px;line-height:1.4}
+.todo-text.done{text-decoration:line-through;color:var(--muted)}
+.pdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
+/* competitor */
+.comp-item{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid #111820}
+.comp-item:last-child{border-bottom:none}
+/* snapshot */
+.snap-item{border-left:2px solid #2a2a40;padding:7px 12px;margin-bottom:9px}
+.snap-month{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--purple);font-weight:600}
+.snap-notes{font-size:12px;color:#888;margin-top:3px;line-height:1.5}
+/* empty */
+.empty{padding:28px;text-align:center;color:var(--muted);font-size:13px}
+/* scrollable */
+.scrollable{max-height:280px;overflow-y:auto;padding-right:2px}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:999}
+.modal-bg.open{display:flex}
+.modal{background:#0d1117;border:1px solid var(--border);border-radius:14px;padding:26px;width:360px;display:flex;flex-direction:column;gap:16px}
+.modal h3{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:#fff}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <span style="font-size:20px">🔍</span>
+    <h1>SEO COMMAND CENTER</h1>
+    <span class="sub mono" style="font-family:'JetBrains Mono',monospace;font-size:11px">IT-Necessity</span>
+  </div>
+  <div id="tabs"></div>
+  <div id="content"></div>
+</div>
+
+<!-- Add Site Modal -->
+<div class="modal-bg" id="add-modal">
+  <div class="modal">
+    <h3>Add New Site</h3>
+    <div class="fg"><label>Site Name</label><input id="nm-name" placeholder="e.g. AccuTran Industries"/></div>
+    <div class="fg"><label>URL</label><input id="nm-url" placeholder="https://yoursite.com"/></div>
+    <div class="fg"><label>Target City</label><input id="nm-city" placeholder="e.g. Lexington, KY"/></div>
+    <div class="fg"><label>GSC Property (paste exact from Search Console)</label><input id="nm-gsc" placeholder="https://yoursite.com/"/></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-blue" style="flex:1;padding:10px;font-size:13px" onclick="confirmAddSite()">Add Site</button>
+      <button class="btn btn-ghost" style="padding:10px 16px" onclick="closeAddModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STORAGE (localStorage for standalone file) ──
+const SK = "itn_seo_v3";
+const save = () => { try { localStorage.setItem(SK, JSON.stringify({sites:state.sites,gscClientId:state.gscClientId})); } catch(e){} };
+const load = () => { try { const d=JSON.parse(localStorage.getItem(SK)||"null"); if(d){state.sites=d.sites||DEF();state.gscClientId=d.gscClientId||"";} } catch(e){} };
+
+const COLORS = ["#4f9cf9","#2dce89","#f6853c","#a78bfa","#f6b73c","#38bdf8","#fb7185","#34d399"];
+let _c = 0;
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const nowMonth = () => new Date().toISOString().slice(0,7);
+const todayStr = () => new Date().toISOString().slice(0,10);
+
+const mkSite = (o={}) => ({
+  id:uid(), name:"New Site", url:"", targetCity:"", gscProperty:"",
+  color: COLORS[_c++ % COLORS.length],
+  keywords:[], competitors:[], todos:[], snapshots:[], ...o
+});
+
+const DEF = () => [
+  mkSite({id:"geo", name:"Georgetown (Main)", targetCity:"Georgetown, KY", url:"https://it-necessity.com/", gscProperty:"https://it-necessity.com/", color:"#4f9cf9"}),
+  mkSite({id:"lex", name:"Lexington Medical", targetCity:"Lexington, KY", url:"https://it-necessity.com/medical-lexington-ky/", gscProperty:"https://it-necessity.com/medical-lexington-ky/", color:"#2dce89"}),
+  mkSite({id:"cam", name:"Security Cameras", targetCity:"Lexington, KY", url:"https://it-necessity.com/security-cameras/", gscProperty:"https://it-necessity.com/security-cameras/", color:"#f6853c"}),
+];
+
+let state = { sites: DEF(), gscClientId:"", gscToken:null, gscExpiry:null };
+let activeId = "geo";
+
+// ── HEALTH ──
+const calcHealth = s => {
+  let h=40;
+  if(s.keywords.length){const avg=s.keywords.reduce((a,k)=>a+(k.pos||50),0)/s.keywords.length;h+=Math.max(0,30-(avg-1)*1.1);h+=Math.min(10,s.keywords.length*2);}
+  if(s.todos.length) h+=(s.todos.filter(t=>t.done).length/s.todos.length)*15;
+  if(s.snapshots.length) h+=5;
+  return Math.round(Math.min(100,Math.max(0,h)));
+};
+const hCol = s => s>=70?"#2dce89":s>=45?"#f6b73c":"#f85149";
+
+// ── GAUGE ──
+const gauge = (score,color) => {
+  const r=34,cx=46,cy=46,c=2*Math.PI*r,arc=c*.75,fill=arc*(score/100);
+  return `<svg width="92" height="92" viewBox="0 0 92 92">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1c2333" stroke-width="7" stroke-dasharray="${arc} ${c}" transform="rotate(135 ${cx} ${cy})" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="7" stroke-dasharray="${fill} ${c}" transform="rotate(135 ${cx} ${cy})" stroke-linecap="round"/>
+    <text x="${cx}" y="${cy-1}" text-anchor="middle" fill="${color}" font-size="18" font-weight="700" font-family="JetBrains Mono,monospace">${score}</text>
+    <text x="${cx}" y="${cy+13}" text-anchor="middle" fill="#586880" font-size="9" font-family="Barlow,sans-serif">HEALTH</text>
+  </svg>`;
+};
+
+// ── SPARKLINE ──
+const spark = (hist,color) => {
+  if(!hist||hist.length<2) return '<span style="color:#333">–</span>';
+  const vals=hist.map(h=>h.p);const mn=Math.min(...vals),mx=Math.max(...vals);const rng=mx-mn||1;
+  const W=72,H=26,p=2;
+  const pts=vals.map((v,i)=>`${p+(i/(vals.length-1))*(W-p*2)},${H-p-(((mx-v)/rng)*(H-p*2))}`).join(' ');
+  const trend=vals[0]-vals[vals.length-1];const sc=trend>=0?color:"#f85149";
+  const lp=pts.split(' ').pop().split(',');
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><polyline points="${pts}" fill="none" stroke="${sc}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${lp[0]}" cy="${lp[1]}" r="2.5" fill="${sc}"/></svg>`;
+};
+
+// ── RENDER TABS ──
+function renderTabs(){
+  document.getElementById('tabs').innerHTML =
+    state.sites.map(s=>`
+      <div class="tab ${s.id===activeId?'active':''}" style="--tab-color:${s.color}" onclick="switchTab('${s.id}')">
+        <span class="dot"></span>${s.name}
+        <span class="tab-x" onclick="event.stopPropagation();removeSite('${s.id}')">×</span>
+      </div>`).join('') +
+    `<div id="add-tab" onclick="openAddModal()">＋ Add Site</div>`;
+}
+
+// ── RENDER CONTENT ──
+function renderContent(){
+  document.getElementById('content').innerHTML = state.sites.map(renderPanel).join('');
+}
+
+function renderPanel(site){
+  const active = site.id===activeId?'active':'';
+  const health = calcHealth(site);
+  const hc = hCol(health);
+  const avgPos = site.keywords.length ? (site.keywords.reduce((a,k)=>a+(k.pos||50),0)/site.keywords.length).toFixed(1) : '–';
+  const openTodos = site.todos.filter(t=>!t.done).length;
+  const live = !!(state.gscToken && Date.now()<state.gscExpiry);
+  const sid = site.id;
+
+  return `<div class="site-panel ${active}" id="panel-${sid}">
+
+    <!-- HEADER CARD -->
+    <div class="card site-hdr" style="--tab-color:${site.color};margin-bottom:14px">
+      ${gauge(health,hc)}
+      <div>
+        <h2>${site.name}</h2>
+        <div class="field-row">
+          <input style="width:270px" placeholder="https://yoursite.com" value="${site.url||''}" onchange="upd('${sid}','url',this.value)"/>
+          <input style="width:150px" placeholder="Target City" value="${site.targetCity||''}" onchange="upd('${sid}','targetCity',this.value)"/>
+          <input style="width:130px" placeholder="Site Name" value="${site.name}" onchange="upd('${sid}','name',this.value);renderAll()"/>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px">
+        <div class="stat-block"><div class="val" style="color:${site.color}">${site.keywords.length}</div><div class="lbl">Keywords</div></div>
+        <div class="stat-block"><div class="val" style="color:${hc}">${avgPos}</div><div class="lbl">Avg Pos</div></div>
+        <div class="stat-block"><div class="val" style="color:${openTodos>0?'#f85149':'#2dce89'}">${openTodos}</div><div class="lbl">Tasks</div></div>
+      </div>
+    </div>
+
+    <!-- GSC BAR -->
+    <div class="card gsc-bar" style="margin-bottom:14px">
+      <div class="gsc-status">
+        <span class="${live?'dot-live':'dot-off'}"></span>
+        <span style="color:${live?'#2dce89':'#586880'}">${live?'GSC Connected':'Search Console'}</span>
+      </div>
+      ${!live?`
+        <input id="cid-${sid}" style="flex:1;min-width:240px" placeholder="Paste Client ID here — 470262993732-herk...apps.googleusercontent.com"
+          value="${state.gscClientId}" onchange="state.gscClientId=this.value;save()"/>
+        <button class="btn btn-blue" onclick="connectGSC()" style="font-size:13px;padding:8px 18px">🔗 Connect GSC</button>
+        <div style="width:100%;font-size:11px;color:var(--muted)">
+          Need to whitelist this page in Google Cloud → Credentials → OAuth Client → Authorized JS Origins: <b style="color:var(--text)">file://</b> or the URL of wherever you host this file.
+        </div>
+      `:`
+        <input style="flex:1;min-width:220px" placeholder="GSC Property URL"
+          value="${site.gscProperty||''}" onchange="upd('${sid}','gscProperty',this.value)"/>
+        <button class="btn btn-green" style="font-size:13px;padding:8px 16px" onclick="fetchGSC('${sid}')">↓ Pull GSC Data</button>
+        <button class="btn" style="background:#1a0a0a;color:#f85149;font-size:12px" onclick="disconnectGSC()">Disconnect</button>
+      `}
+      <div id="gsc-err-${sid}" style="color:var(--red);font-size:12px;display:none;width:100%;margin-top:2px"></div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="main-grid">
+
+      <!-- KEYWORDS -->
+      <div class="card">
+        <div class="card-hd">
+          <span class="title">KEYWORD RANKINGS</span>
+          <button class="btn btn-blue" onclick="addKw('${sid}')">+ Add Keyword</button>
+        </div>
+        ${site.keywords.length===0
+          ?`<div class="empty">${live?'Hit "Pull GSC Data" above, or add keywords manually.':'Connect GSC or add keywords manually.'}</div>`
+          :`<div style="overflow-x:auto"><table class="kw-table">
+            <thead><tr><th>Keyword</th><th>Position</th><th>Target</th><th>CTR</th><th>Clicks</th><th>Trend</th><th></th></tr></thead>
+            <tbody>
+            ${site.keywords.map(kw=>{
+              const pc=kw.pos<=3?'#2dce89':kw.pos<=10?'#f6b73c':'#f85149';
+              const hist=kw.history||[];
+              const diff=hist.length>1?hist[0].p-hist[hist.length-1].p:null;
+              const ds=diff!=null?`<span style="font-size:10px;color:${diff>0?'#2dce89':diff<0?'#f85149':'var(--muted)'}">${diff>0?'▲':'▼'}${Math.abs(diff).toFixed(1)}</span>`:'';
+              return`<tr>
+                <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${kw.term}">${kw.term}</td>
+                <td><span class="pos-badge" style="color:${pc};border-color:${pc}40" onclick="updPos('${sid}','${kw.id}')" title="Click to update">${kw.pos!=null?kw.pos.toFixed(1):'–'}</span> ${ds}</td>
+                <td><input type="number" min="1" max="100" style="width:50px;font-size:12px;padding:3px 6px;text-align:center" value="${kw.target||5}" onchange="updTarget('${sid}','${kw.id}',+this.value)"/></td>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">${kw.ctr!=null?kw.ctr.toFixed(1)+'%':'–'}</td>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">${kw.clicks??'–'}</td>
+                <td>${spark(kw.history,site.color)}</td>
+                <td><button class="btn btn-red" onclick="delKw('${sid}','${kw.id}')">✕</button></td>
+              </tr>`;
+            }).join('')}
+            </tbody>
+          </table></div>`
+        }
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+
+        <!-- TODOS -->
+        <div class="card">
+          <div class="card-hd"><span class="title">ACTION ITEMS</span><button class="btn btn-green" onclick="addTodo('${sid}')">+ Add</button></div>
+          <div class="card-body scrollable">
+            ${site.todos.length===0?'<div class="empty" style="padding:18px 0">No tasks yet</div>':''}
+            ${site.todos.map(t=>`
+              <div class="todo-item">
+                <div class="pdot" style="background:${t.priority==='high'?'#f85149':t.priority==='low'?'#2dce89':'#f6b73c'}"></div>
+                <div class="todo-cb ${t.done?'done':''}" onclick="toggleTodo('${sid}','${t.id}')">
+                  ${t.done?'<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round"/></svg>':''}
+                </div>
+                <span class="todo-text ${t.done?'done':''}">${t.text}</span>
+                <button class="btn btn-red" onclick="delTodo('${sid}','${t.id}')">✕</button>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <!-- COMPETITORS -->
+        <div class="card">
+          <div class="card-hd"><span class="title">COMPETITORS</span><button class="btn btn-amber" onclick="addComp('${sid}')">+ Add</button></div>
+          <div class="card-body">
+            ${site.competitors.length===0?'<div class="empty" style="padding:16px 0">No competitors tracked</div>':''}
+            ${site.competitors.map(c=>`
+              <div class="comp-item">
+                <span style="font-size:17px">🏢</span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:500">${c.name}</div>
+                  ${c.url?`<div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.url}</div>`:''}
+                </div>
+                <button class="btn btn-red" onclick="delComp('${sid}','${c.id}')">✕</button>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <!-- MONTHLY LOG -->
+        <div class="card">
+          <div class="card-hd"><span class="title">MONTHLY LOG</span><button class="btn btn-purple" onclick="addSnap('${sid}')">+ Log Month</button></div>
+          <div class="card-body scrollable">
+            ${site.snapshots.length===0?'<div class="empty" style="padding:16px 0">No logs yet</div>':''}
+            ${site.snapshots.map(sn=>`
+              <div class="snap-item">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span class="snap-month">${sn.month}</span>
+                  <button class="btn btn-red" style="font-size:10px" onclick="delSnap('${sid}','${sn.id}')">✕</button>
+                </div>
+                ${sn.metrics?.avgPos!=null?`<div style="font-size:12px;color:var(--muted);margin-top:2px">Avg pos: <b style="color:var(--text)">${sn.metrics.avgPos}</b>${sn.metrics.clicks!=null?' · Clicks: <b style="color:var(--text)">'+sn.metrics.clicks+'</b>':''}</div>`:''}
+                ${sn.notes?`<div class="snap-notes">${sn.notes}</div>`:''}
+              </div>`).join('')}
+          </div>
+        </div>
+
+      </div><!-- /right col -->
+    </div><!-- /main grid -->
+  </div>`;
+}
+
+// ── ACTIONS ──
+const renderAll = () => { renderTabs(); renderContent(); };
+const switchTab = id => { activeId=id; renderAll(); };
+const upd = (sid,field,val) => { state.sites=state.sites.map(s=>s.id===sid?{...s,[field]:val}:s); save(); };
+const patch = (sid,fn) => { state.sites=state.sites.map(s=>s.id===sid?fn(s):s); save(); renderAll(); };
+
+function addKw(sid){
+  const term=prompt("Keyword to track:");if(!term?.trim())return;
+  const posStr=prompt(`Current position for "${term.trim()}":\n(e.g. 8.5 — press Cancel to skip)`);
+  const pos=posStr!=null?parseFloat(posStr):NaN;
+  const kw={id:uid(),term:term.trim(),pos:isNaN(pos)?null:pos,target:5,ctr:null,clicks:null,impressions:null,manual:true,
+    history:isNaN(pos)?[]:[{date:nowMonth(),p:pos}]};
+  patch(sid,s=>({...s,keywords:[...s.keywords,kw]}));
+}
+function updPos(sid,kwId){
+  const site=state.sites.find(s=>s.id===sid);const kw=site.keywords.find(k=>k.id===kwId);
+  const pos=parseFloat(prompt(`New position for "${kw.term}":`));if(isNaN(pos))return;
+  patch(sid,s=>({...s,keywords:s.keywords.map(k=>{
+    if(k.id!==kwId)return k;
+    const hist=[...(k.history||[]),{date:nowMonth(),p:pos}].slice(-12);
+    return{...k,pos,history:hist};
+  })}));
+}
+function updTarget(sid,kwId,val){patch(sid,s=>({...s,keywords:s.keywords.map(k=>k.id===kwId?{...k,target:val}:k)}))}
+function delKw(sid,kwId){if(!confirm("Remove keyword?"))return;patch(sid,s=>({...s,keywords:s.keywords.filter(k=>k.id!==kwId)}))}
+
+function addTodo(sid){
+  const text=prompt("Task description:");if(!text?.trim())return;
+  const p=(prompt("Priority? high / medium / low:","medium")||"medium").toLowerCase();
+  const priority=["high","medium","low"].includes(p)?p:"medium";
+  patch(sid,s=>({...s,todos:[...s.todos,{id:uid(),text:text.trim(),done:false,priority}]}));
+}
+function toggleTodo(sid,id){patch(sid,s=>({...s,todos:s.todos.map(t=>t.id===id?{...t,done:!t.done}:t)}))}
+function delTodo(sid,id){patch(sid,s=>({...s,todos:s.todos.filter(t=>t.id!==id)}))}
+
+function addComp(sid){
+  const name=prompt("Competitor name:");if(!name?.trim())return;
+  const url=prompt("Their URL (optional):","")||"";
+  patch(sid,s=>({...s,competitors:[...s.competitors,{id:uid(),name:name.trim(),url:url.trim()}]}));
+}
+function delComp(sid,id){patch(sid,s=>({...s,competitors:s.competitors.filter(c=>c.id!==id)}))}
+
+function addSnap(sid){
+  const month=prompt("Month (YYYY-MM):",nowMonth());if(!month?.match(/^\d{4}-\d{2}$/)){alert("Use YYYY-MM format");return}
+  const notes=prompt("Notes for this month:")||"";
+  const avgPos=parseFloat(prompt("Avg keyword position this month (or Cancel):")||"");
+  const clicks=parseInt(prompt("Total clicks this month (or Cancel):")||"");
+  patch(sid,s=>({...s,snapshots:[...s.snapshots,{id:uid(),month,notes:notes.trim(),
+    metrics:{avgPos:isNaN(avgPos)?null:avgPos,clicks:isNaN(clicks)?null:clicks}}]
+    .sort((a,b)=>b.month.localeCompare(a.month))}));
+}
+function delSnap(sid,id){patch(sid,s=>({...s,snapshots:s.snapshots.filter(sn=>sn.id!==id)}))}
+
+function removeSite(id){
+  if(state.sites.length<=1){alert("Need at least one site.");return}
+  if(!confirm("Remove this site and all its data?"))return;
+  state.sites=state.sites.filter(s=>s.id!==id);
+  if(activeId===id)activeId=state.sites[0].id;
+  save();renderAll();
+}
+function openAddModal(){document.getElementById('add-modal').classList.add('open')}
+function closeAddModal(){
+  document.getElementById('add-modal').classList.remove('open');
+  ['nm-name','nm-url','nm-city','nm-gsc'].forEach(i=>document.getElementById(i).value='');
+}
+function confirmAddSite(){
+  const name=document.getElementById('nm-name').value.trim();
+  if(!name){alert("Enter a site name.");return}
+  const newSite=mkSite({
+    name,
+    url:document.getElementById('nm-url').value.trim(),
+    targetCity:document.getElementById('nm-city').value.trim(),
+    gscProperty:document.getElementById('nm-gsc').value.trim()
+  });
+  state.sites.push(newSite);activeId=newSite.id;
+  save();closeAddModal();renderAll();
+}
+
+// ── GSC AUTH ──
+function connectGSC(){
+  const inp=document.getElementById(`cid-${activeId}`);
+  const clientId=(inp?.value||state.gscClientId||"").trim();
+  if(!clientId){alert("Paste your Client ID in the field first.");return}
+  state.gscClientId=clientId;save();
+
+  const auth=()=>{
+    try{
+      window.google.accounts.oauth2.initTokenClient({
+        client_id:clientId,
+        scope:"https://www.googleapis.com/auth/webmasters.readonly",
+        callback(resp){
+          if(resp.error){gscErr(resp.error);return}
+          state.gscToken=resp.access_token;
+          state.gscExpiry=Date.now()+(resp.expires_in||3600)*1000;
+          renderAll();
+        }
+      }).requestAccessToken();
+    }catch(e){gscErr("Auth failed — make sure your file's origin (file:// or hosted URL) is added as an Authorized JS Origin in Google Cloud Console for this OAuth client.")}
+  };
+
+  if(window.google?.accounts?.oauth2){auth();return}
+  const s=document.createElement('script');
+  s.src="https://accounts.google.com/gsi/client";
+  s.onload=auth;
+  s.onerror=()=>gscErr("Couldn't load Google Identity Services. Check internet connection.");
+  document.head.appendChild(s);
+}
+function disconnectGSC(){state.gscToken=null;state.gscExpiry=null;renderAll()}
+function gscErr(msg){
+  document.querySelectorAll('[id^="gsc-err-"]').forEach(el=>{el.textContent=msg;el.style.display='block'});
+}
+
+async function fetchGSC(sid){
+  const site=state.sites.find(s=>s.id===sid);
+  if(!state.gscToken||!site?.gscProperty){alert("GSC must be connected and property URL must be filled in.");return}
+  const btn=event.target;if(btn)btn.textContent="Fetching…";
+  try{
+    const end=todayStr();
+    const start=new Date(Date.now()-90*86400000).toISOString().slice(0,10);
+    const resp=await fetch(
+      `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site.gscProperty)}/searchAnalytics/query`,
+      {method:"POST",headers:{Authorization:`Bearer ${state.gscToken}`,"Content-Type":"application/json"},
+       body:JSON.stringify({startDate:start,endDate:end,dimensions:["query"],rowLimit:25})}
+    );
+    const data=await resp.json();
+    if(data.error){gscErr(data.error.message||"GSC API error");if(btn)btn.textContent="↓ Pull GSC Data";return}
+    const rows=data.rows||[];
+    patch(sid,s=>{
+      const existing=new Map((s.keywords||[]).map(k=>[k.term.toLowerCase(),k]));
+      const updated=rows.map(r=>{
+        const term=r.keys[0];const pos=Math.round(r.position*10)/10;const ex=existing.get(term.toLowerCase());
+        if(ex){const hist=[...(ex.history||[]),{date:end.slice(0,7),p:pos}].slice(-12);return{...ex,pos,history:hist,ctr:Math.round(r.ctr*1000)/10,clicks:r.clicks,impressions:r.impressions};}
+        return{id:uid(),term,pos,history:[{date:end.slice(0,7),p:pos}],target:5,ctr:Math.round(r.ctr*1000)/10,clicks:r.clicks,impressions:r.impressions,manual:false};
+      });
+      const gscTerms=new Set(updated.map(k=>k.term.toLowerCase()));
+      const manual=(s.keywords||[]).filter(k=>!gscTerms.has(k.term.toLowerCase())&&k.manual);
+      return{...s,keywords:[...updated,...manual]};
+    });
+  }catch(e){gscErr("Fetch error: "+e.message);}
+  if(btn)btn.textContent="↓ Pull GSC Data";
+}
+
+// ── BOOT ──
+load();
+renderAll();
+</script>
+</body>
+</html>
