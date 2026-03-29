@@ -144,9 +144,9 @@ const mkSite = (o={}) => ({
 });
 
 const DEF = () => [
-  mkSite({id:"geo", name:"Georgetown (Main)", targetCity:"Georgetown, KY", url:"https://it-necessity.com/", gscProperty:"https://it-necessity.com/", color:"#4f9cf9"}),
-  mkSite({id:"lex", name:"Lexington Medical", targetCity:"Lexington, KY", url:"https://it-necessity.com/medical-lexington-ky/", gscProperty:"https://it-necessity.com/medical-lexington-ky/", color:"#2dce89"}),
-  mkSite({id:"cam", name:"Security Cameras", targetCity:"Lexington, KY", url:"https://it-necessity.com/security-cameras/", gscProperty:"https://it-necessity.com/security-cameras/", color:"#f6853c"}),
+  mkSite({id:"geo", name:"Georgetown (Main)", targetCity:"Georgetown, KY", url:"https://it-necessity.com/", gscProperty:"https://it-necessity.com/", pageUrl:"https://it-necessity.com/", color:"#4f9cf9"}),
+  mkSite({id:"lex", name:"Lexington IT Support", targetCity:"Lexington, KY", url:"https://it-necessity.com/it-support-lexington-ky", gscProperty:"https://it-necessity.com/", pageUrl:"https://it-necessity.com/it-support-lexington-ky", color:"#2dce89"}),
+  mkSite({id:"cam", name:"Security Cameras", targetCity:"Lexington, KY", url:"https://it-necessity.com/security-cameras/", gscProperty:"https://it-necessity.com/", pageUrl:"https://it-necessity.com/security-cameras/", color:"#f6853c"}),
 ];
 
 let state = { sites: DEF(), gscClientId:"", gscToken:null, gscExpiry:null };
@@ -459,18 +459,28 @@ function gscErr(msg){
 async function fetchGSC(sid){
   const site=state.sites.find(s=>s.id===sid);
   if(!state.gscToken||!site?.gscProperty){alert("GSC must be connected and property URL must be filled in.");return}
-  const btn=event.target;if(btn)btn.textContent="Fetching…";
+  const btn=event.target;if(btn){btn.textContent="Fetching…";btn.disabled=true;}
   try{
     const end=todayStr();
     const start=new Date(Date.now()-90*86400000).toISOString().slice(0,10);
+    const pageFilter=site.pageUrl||site.url||null;
+    const body={startDate:start,endDate:end,dimensions:["query"],rowLimit:25};
+    // Filter to only keywords for this specific page
+    if(pageFilter){
+      body.dimensionFilterGroups=[{filters:[{dimension:"page",operator:"equals",expression:pageFilter}]}];
+    }
     const resp=await fetch(
       `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site.gscProperty)}/searchAnalytics/query`,
       {method:"POST",headers:{Authorization:`Bearer ${state.gscToken}`,"Content-Type":"application/json"},
-       body:JSON.stringify({startDate:start,endDate:end,dimensions:["query"],rowLimit:25})}
+       body:JSON.stringify(body)}
     );
     const data=await resp.json();
-    if(data.error){gscErr(data.error.message||"GSC API error");if(btn)btn.textContent="↓ Pull GSC Data";return}
+    if(data.error){gscErr(data.error.message||"GSC API error");if(btn){btn.textContent="↓ Pull GSC Data";btn.disabled=false;}return}
     const rows=data.rows||[];
+    if(rows.length===0){
+      gscErr(`No data found for ${pageFilter||site.gscProperty} — make sure this page has impressions in Search Console.`);
+      if(btn){btn.textContent="↓ Pull GSC Data";btn.disabled=false;}return;
+    }
     patch(sid,s=>{
       const existing=new Map((s.keywords||[]).map(k=>[k.term.toLowerCase(),k]));
       const updated=rows.map(r=>{
@@ -483,7 +493,7 @@ async function fetchGSC(sid){
       return{...s,keywords:[...updated,...manual]};
     });
   }catch(e){gscErr("Fetch error: "+e.message);}
-  if(btn)btn.textContent="↓ Pull GSC Data";
+  if(btn){btn.textContent="↓ Pull GSC Data";btn.disabled=false;}
 }
 
 // ── BOOT ──
